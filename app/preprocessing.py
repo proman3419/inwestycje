@@ -5,7 +5,7 @@ from sklearn.preprocessing import MinMaxScaler
 from ta.utils import dropna
 
 
-def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
+def preprocess_data(df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
     df = dropna(df)
     df = ta.add_all_ta_features(
         df, "open", "high", "low", "close", "volume"
@@ -15,4 +15,4 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     columns = list(df.columns)[6:]
     scaler = MinMaxScaler()
     df[columns] = scaler.fit_transform(df[columns])
-    return df
+    return df.iloc[:, :6], df.iloc[:, 6:]
