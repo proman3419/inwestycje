@@ -21,9 +21,9 @@ poetry run bash
 ```
 Now you can run the application
 ```bash
-python main.py
+python preprocessing.py
 ```
 Alternatively, you can run the application directly from your shell
 ```bash
-poetry run python main.py
+poetry run python preprocessing.py
 ```
