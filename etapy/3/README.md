@@ -7,7 +7,7 @@
 ### Możliwa
 ![](best_possible_strategy.png)
 
-Najlepsza znaleziona strategia dała rezultat równy ~0.07439% optymalnej strategii
+Najlepsza znaleziona strategia dała rezultat równy ~0.1% optymalnej strategii
 
 ## Cele i zakres prac
 - Stworzenie generatora strategii inwestycyjnych opierającego się o algorytmy optymalizacyjne inspirowane biologicznie.
