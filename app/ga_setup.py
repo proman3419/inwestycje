@@ -21,10 +21,11 @@ def setup_toolbox(stock_data: pd.DataFrame, ta_features: pd.DataFrame) -> base.T
         money = 1000
         shares = 0
         for i in range(len(_ta_features) - 1):
-            if np.sum(_ta_features.iloc[i].to_numpy() * np.array(individual)) > 0 and money > 0:
+            _eval = np.sum(_ta_features.iloc[i].to_numpy() * np.array(individual))
+            if _eval > 0 and money > 0:
                 shares = money / _stock_data.iloc[i]['close']
                 money = 0
-            elif np.sum(_ta_features.iloc[i].to_numpy() * np.array(individual)) < 0 and shares > 0:
+            elif _eval < 0 and shares > 0:
                 money = shares * _stock_data.iloc[i]['close']
                 shares = 0
         if shares > 0:
