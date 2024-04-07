@@ -1,10 +1,6 @@
 import numpy as np
 from enum import Enum
-
-import pandas as pd
 from matplotlib import pyplot as plt
-
-from preprocessing import preprocess_data
 
 
 class Action(Enum):
@@ -24,21 +20,22 @@ def print_operation(date, action: Action, close, money, shares):
 
 def print_strategy(stock_data, ta_features, strategy, initial_money=1000):
     dates = stock_data['date'].to_numpy()
+    close_prices = stock_data['close'].to_numpy()
     money = initial_money
     shares = 0
     for i in range(len(ta_features) - 1):
         if np.sum(ta_features.iloc[i].to_numpy() * np.array(strategy)) > 0 and money > 0:
-            shares = money / stock_data.iloc[i]['close']
+            shares = money / close_prices[i]
             money = 0
-            print_operation(dates[i], Action.BUY, stock_data.iloc[i]['close'], money, shares)
+            print_operation(dates[i], Action.BUY, close_prices[i], money, shares)
         elif np.sum(ta_features.iloc[i].to_numpy() * np.array(strategy)) < 0 and shares > 0:
-            money = shares * stock_data.iloc[i]['close']
+            money = shares * close_prices[i]
             shares = 0
-            print_operation(dates[i], Action.SELL, stock_data.iloc[i]['close'], money, shares)
+            print_operation(dates[i], Action.SELL, close_prices[i], money, shares)
     if shares > 0:
-        money = shares * stock_data.iloc[-1]['close']
+        money = shares * close_prices[-1]
         shares = 0
-        print_operation(stock_data.iloc[-1]['date'], Action.SELL, stock_data.iloc[-1]['close'], money, shares)
+        print_operation(dates[-1], Action.SELL, close_prices[-1], money, shares)
     print(
         f'\n{"-" * 115}\n'
         f'  INITIAL MONEY: {str(initial_money)[:11].rjust(12)}    '
@@ -87,12 +84,12 @@ def simulate_best_possible_strategy(stock_data, initial_money=1000):
     money = initial_money
     shares = 0
     for i in range(len(dates) - 1):
-        if stock_data.iloc[i]['close'] < stock_data.iloc[i+1]['close'] and money > 0:
+        if stock_data.iloc[i]['close'] < stock_data.iloc[i + 1]['close'] and money > 0:
             shares = money / close_prices[i]
             money = 0
             x_buy.append(dates[i])
             y_buy.append(close_prices[i])
-        elif stock_data.iloc[i]['close'] > stock_data.iloc[i+1]['close'] and shares > 0:
+        elif stock_data.iloc[i]['close'] > stock_data.iloc[i + 1]['close'] and shares > 0:
             money = shares * close_prices[i]
             shares = 0
             x_sell.append(dates[i])
