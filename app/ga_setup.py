@@ -31,26 +31,53 @@ def cxTwoPointTwoVectorsNumpy(ind1: np.ndarray, ind2: np.ndarray):
     return ind1, ind2
 
 
-def evaluate(individual: np.ndarray, days: int, ta_features: np.ndarray, stock_data: np.ndarray):
-    money = 100000
+def mutUniform(individual, low, up, indpb):
+    size = len(individual)
+
+    for i in range(size):
+        if random.random() < indpb:
+            individual[i] = random.random() * (up - low) + low
+
+    return individual,
+
+
+def evaluate(
+        individual: np.ndarray,
+        days: int,
+        ta_features: np.ndarray,
+        stock_data: np.ndarray,
+        initial_money: int,
+        commission: float
+):
+    money = initial_money
     shares = 0
+    commissions = 0
     individual_buy, individual_sell = np.array_split(individual, 2)
     for i in range(1, days - 1):
         eval_buy = np.sum(ta_features[i - 1] * individual_buy)
         eval_sell = np.sum(ta_features[i - 1] * individual_sell)
-        if money > 0 and eval_buy > 0 and eval_sell <= 0:
-            shares = money / stock_data[i, 2]
+        if money > 0 and eval_buy > 0:
+            commissions += commission * money
+            shares = money / stock_data[i, 1]
             money = 0
-        elif shares > 0 and eval_sell > 0 and eval_buy <= 0:
-            money = shares * stock_data[i, 2]
+        elif shares > 0 and eval_sell > 0:
+            money = shares * stock_data[i, 1]
+            commissions += commission * money
             shares = 0
     if shares > 0:
-        money = shares * stock_data[-1, 2]
+        money = shares * stock_data[-1, 1]
+        commissions += commission * money
 
-    return money,
+    return money - commissions,
 
 
-def setup_toolbox(stock_data: pd.DataFrame, ta_features: pd.DataFrame, pop_size: int) -> base.Toolbox:
+def setup_toolbox(
+        stock_data: pd.DataFrame,
+        ta_features: pd.DataFrame,
+        pop_size: int,
+        initial_money: int,
+        commission: float
+) -> base.Toolbox:
     ta_features_n = len(ta_features.columns)
     individual_n = ta_features_n * 2
 
@@ -64,16 +91,26 @@ def setup_toolbox(stock_data: pd.DataFrame, ta_features: pd.DataFrame, pop_size:
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
     days = ta_features.shape[0]
-    ta_features_numpy = ta_features.to_numpy()
-    stock_data_numpy = stock_data.to_numpy()
-    # stock_data_numpy columns:
+    ta_features = ta_features.to_numpy()
+    stock_data = stock_data.to_numpy()
+    # stock_data.to_numpy() columns:
     # 0 - date, 1 - open, 2 - high, 3 - low, 4 - close, 5 - volume
 
-    toolbox.register("evaluate", evaluate, days=days, ta_features=ta_features_numpy, stock_data=stock_data_numpy)
+    toolbox.register(
+        "evaluate",
+        evaluate,
+        days=days,
+        ta_features=ta_features,
+        stock_data=stock_data,
+        initial_money=initial_money,
+        commission=commission
+    )
     toolbox.register("mate", cxTwoPointTwoVectorsNumpy)
     toolbox.register("mutate", tools.mutPolynomialBounded, eta=10, low=-1, up=1, indpb=0.05)
+    # toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.5, indpb=0.1)
+    # toolbox.register("mutate", mutUniform, low=-1, up=1, indpb=0.1)
 
-    tournament_size = 2 ** int(log2(pop_size * 0.2))
+    tournament_size = 2 ** int(log2(pop_size * 0.1))
     toolbox.register("select", tools.selTournament, tournsize=tournament_size)
 
     return toolbox
@@ -93,8 +130,8 @@ def compare_individuals(ind1: np.ndarray, ind2: np.ndarray) -> bool:
     return (ind1 == ind2).all()
 
 
-def setup_ga(stock_data: pd.DataFrame, ta_features: pd.DataFrame, pop_size: int):
-    toolbox = setup_toolbox(stock_data, ta_features, pop_size)
+def setup_ga(stock_data: pd.DataFrame, ta_features: pd.DataFrame, pop_size: int, initial_money: int, commission: float):
+    toolbox = setup_toolbox(stock_data, ta_features, pop_size, initial_money, commission)
     population = toolbox.population(n=pop_size)
     stats = setup_stats()
     hall_of_fame = tools.HallOfFame(1, compare_individuals)
