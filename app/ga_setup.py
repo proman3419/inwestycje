@@ -32,20 +32,20 @@ def cxTwoPointTwoVectorsNumpy(ind1: np.ndarray, ind2: np.ndarray):
 
 
 def evaluate(individual: np.ndarray, days: int, ta_features: np.ndarray, stock_data: np.ndarray):
-    money = 1000
+    money = 100000
     shares = 0
     individual_buy, individual_sell = np.array_split(individual, 2)
-    for i in range(days - 1):
-        eval_buy = np.sum(ta_features[i] * individual_buy)
-        eval_sell = np.sum(ta_features[i] * individual_sell)
+    for i in range(1, days - 1):
+        eval_buy = np.sum(ta_features[i - 1] * individual_buy)
+        eval_sell = np.sum(ta_features[i - 1] * individual_sell)
         if money > 0 and eval_buy > 0 and eval_sell <= 0:
-            shares = money / stock_data[i, 4]
+            shares = money / stock_data[i, 2]
             money = 0
         elif shares > 0 and eval_sell > 0 and eval_buy <= 0:
-            money = shares * stock_data[i, 4]
+            money = shares * stock_data[i, 2]
             shares = 0
     if shares > 0:
-        money = shares * stock_data[-1, 4]
+        money = shares * stock_data[-1, 2]
 
     return money,
 
