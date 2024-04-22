@@ -57,7 +57,32 @@ ma też sporo sensu, gdyż taka strategia zdaje się lepiej przewidywać długot
 praktyce może być bardziej użyteczne niż częste kupowanie/sprzedawanie akcji. Nie musimy wtedy praktycznie przejmować się  
 prowizjami, bo są pomijalne. Dodatkowo takie rzadkie transakcje można nawet wykonywać ręcznie, a nie automatycznie.
 
-# Inne usprawnienia
+## Metryki
+### Analiza
+Wykorzystaliśmy korelację Pearson do znalezienia metryk niosących podobne informacje. \
+Usunęliśmy metryki mające wartość korelacji większą od pewnego thresholdu.
+
+Przed usunięciem:
+
+![](corr_hm.png)
+
+Po usunięciu:
+
+![](dropped_corr_hm.png)
+
+### Generowanie
+Dodaliśmy nowy parametr do modelu - zestaw metryk. \
+Generujemy metryki mające losowe wartości z zadanych przedziałów.
+
+### Połączenie
+Przykładowo:
+1. zaczynamy z 84 metrykami
+2. generujemy i dodajemy - mamy 123
+3. usuwamy mocno skorelowane - finalnie 112
+
+Na razie dało to gorsze wyniki. Podejrzewamy, że problemem są źle dobrane zakresy parametrów metryk co będziemy dalej inwestygowali.
+
+## Inne usprawnienia
  - Rozdzieliliśmy strategię (czyli wektor wag) na dwie części, jedna odpowiada za decyzję o kupnie, a druga o sprzedaży.
  - Przepisaliśmy niektóre funkcje z DEAP na Numpy, co pozwoliło nam na znaczne zwiększenie wydajności.
  - Dodaliśmy multi-threading, co pozwoliło na jeszcze większe przyspieszenie obliczeń, w połączeniu z poprzednim punktem.
@@ -68,9 +93,4 @@ prowizjami, bo są pomijalne. Dodatkowo takie rzadkie transakcje można nawet wy
  - Zmieniliśmy też tournament_size (wcześniej było zawsze 3) tak by zależał od wielkości populacji. Teraz jest to najbliższa
    potęga 2 mniejsza niż 10% wielkości populacji. Wydaje się, że takie podejście daje lepsze wyniki, ale mamy też teraz
    możliwość zmiany tournament_size jako parametr (procent wielkości populacji).
-
-## Analiza metryk
-Wykorzystaliśmy korelację Pearson do znalezienia metryk niosących podobne informacje. \
-https://www.scribbr.com/statistics/pearson-correlation-coefficient/
-
-### Więcej metryk
+  
