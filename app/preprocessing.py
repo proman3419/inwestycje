@@ -19,7 +19,7 @@ def load_data(path: str) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
         df, "open", "high", "low", "close", "volume"
     )
     df = df.drop(columns=['trend_psar_up', 'trend_psar_down'])  # TODO: merge or something
-    df = df.tail(-100)
+    df = df.tail(-365)
     columns = list(df.columns)[6:]
     scaler = MinMaxScaler()
     df[columns] = scaler.fit_transform(df[columns])
