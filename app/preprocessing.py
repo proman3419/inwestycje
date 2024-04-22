@@ -10,12 +10,15 @@ from ta.utils import dropna
 
 def preprocess_data(path: str) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
     stock_data, ta_features, preview = load_data(path)
-    drop_highly_correlated(ta_features)
-    generated_features = generate_features()
-    ta_features = append_features(generated_features, ta_features)
+    for module in [ta.momentum, ta.trend, ta.volatility, ta.volume]:
+        generated_features = generate_features(module)
+        ta_features = append_features(generated_features, ta_features)
+        print(ta_features.shape)
     ta_features = ta_features.tail(-400)
     stock_data = stock_data.tail(-400)
     preview = preview.tail(-400)
+    drop_highly_correlated(ta_features)
+    preview = pd.concat([stock_data, ta_features], axis=1)
     return stock_data, ta_features, preview
 
 
@@ -36,10 +39,10 @@ def load_data(path: str) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
     return stock_data, ta_features, preview
 
 
-def generate_features():
+def generate_features(module):
     random.seed(420)
     stock_data, ta_features, preview = load_data("./data/wig_d.csv")
-    constructors = get_constructors(ta.momentum)
+    constructors = get_constructors(module)
     instances = inject_params(constructors, stock_data)
     features = retrieve_features(instances)
     return features
@@ -71,7 +74,7 @@ def get_constructors(module):
                 full_class_name = f'{module.__name__}.{class_name}'
                 constructor = (class_, init_signature)
                 constructors.append(constructor)
-                print(constructor)
+                # print(constructor)
             else:
                 # print(f"Class {class_name} does not have a constructor (__init__ method)")
                 pass
@@ -91,10 +94,10 @@ def inject_params(constructors, stock_data):
             else:
                 _type = type(param.default)
                 value = None
-                if _type is int:
-                    value = random.randint(0, 100)
+                if _type is int or param.name == 'window':
+                    value = random.randint(1, 100)
                 if _type is float:
-                    value = random.uniform(0, 100)
+                    value = random.uniform(1, 100)
                 if _type is bool:
                     value = False
                 to_inject[param.name] = value
@@ -106,20 +109,21 @@ def inject_params(constructors, stock_data):
 def retrieve_features(instances):
     features = dict()
     for feature_name, instance in instances.items():
-        method_names = [m for m in dir(instance) if m[0] != '_']
-        for method_name in method_names:
-            method = getattr(instance, method_name)
-            feature_vals = method()
-            print(feature_name, feature_vals.isna().sum())
-            if feature_vals.isna().sum() < 365:
-                features[feature_name] = feature_vals
-        if len(method_names) == 0:
-            continue
+        if feature_name != 'GENERATED_VolumeWeightedAveragePrice':
+            method_names = [m for m in dir(instance) if m[0] != '_']
+            for method_name in method_names:
+                method = getattr(instance, method_name)
+                feature_vals = method()
+                # print(feature_name, feature_vals.isna().sum())
+                if feature_vals.isna().sum() < 365:
+                    features[feature_name] = feature_vals
+            if len(method_names) == 0:
+                continue
     return features
 
 
 # https://stackoverflow.com/questions/29294983/how-to-calculate-correlation-between-all-columns-and-remove-highly-correlated-on
-def drop_highly_correlated(df: pd.DataFrame, threshold=0.95) -> None:
+def drop_highly_correlated(df: pd.DataFrame, threshold=0.999) -> None:
     corr_matrix = df.corr().abs()
     upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
     to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
