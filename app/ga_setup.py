@@ -71,6 +71,7 @@ def setup_toolbox(
         stock_data: pd.DataFrame,
         ta_features: pd.DataFrame,
         pop_size: int,
+        tournament_size_pop_ratio: float,
         initial_money: int,
         commission: float
 ) -> base.Toolbox:
@@ -106,7 +107,7 @@ def setup_toolbox(
     # toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.5, indpb=0.1)
     # toolbox.register("mutate", mutUniform, low=-1, up=1, indpb=0.1)
 
-    tournament_size = 2 ** int(log2(pop_size * 0.1))
+    tournament_size = 2 ** int(log2(pop_size * tournament_size_pop_ratio))
     toolbox.register("select", tools.selTournament, tournsize=tournament_size)
 
     return toolbox
@@ -126,8 +127,15 @@ def compare_individuals(ind1: np.ndarray, ind2: np.ndarray) -> bool:
     return (ind1 == ind2).all()
 
 
-def setup_ga(stock_data: pd.DataFrame, ta_features: pd.DataFrame, pop_size: int, initial_money: int, commission: float):
-    toolbox = setup_toolbox(stock_data, ta_features, pop_size, initial_money, commission)
+def setup_ga(
+        stock_data: pd.DataFrame,
+        ta_features: pd.DataFrame,
+        pop_size: int,
+        tournament_size_pop_ratio: float,
+        initial_money: int,
+        commission: float
+):
+    toolbox = setup_toolbox(stock_data, ta_features, pop_size, tournament_size_pop_ratio, initial_money, commission)
     population = toolbox.population(n=pop_size)
     stats = setup_stats()
     hall_of_fame = tools.HallOfFame(1, compare_individuals)
