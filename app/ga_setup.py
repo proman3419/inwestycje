@@ -51,24 +51,20 @@ def evaluate(
 ):
     money = initial_money
     shares = 0
-    commissions = 0
     individual_buy, individual_sell = np.array_split(individual, 2)
     for i in range(1, days - 1):
         eval_buy = np.sum(ta_features[i - 1] * individual_buy)
         eval_sell = np.sum(ta_features[i - 1] * individual_sell)
         if money > 0 and eval_buy > 0:
-            commissions += commission * money
-            shares = money / stock_data[i, 1]
+            shares = (money * (1 - commission)) / stock_data[i, 1]
             money = 0
         elif shares > 0 and eval_sell > 0:
-            money = shares * stock_data[i, 1]
-            commissions += commission * money
+            money = shares * stock_data[i, 1] * (1 - commission)
             shares = 0
     if shares > 0:
-        money = shares * stock_data[-1, 1]
-        commissions += commission * money
+        money = shares * stock_data[-1, 1] * (1 - commission)
 
-    return money - commissions,
+    return money,
 
 
 def setup_toolbox(

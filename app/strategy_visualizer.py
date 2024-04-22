@@ -10,14 +10,13 @@ class Action(Enum):
     SELL = 'SELL'
 
 
-def print_operation(date, action: Action, open, money, shares, commissions):
+def print_operation(date, action: Action, open, money, shares):
     print(
         f'      DATE: {date.rjust(12)}    '
         f'    ACTION: {action.value.lower().rjust(12)}    '
         f'      OPEN: {str(open)[:11].rjust(12)}    '
         f'     MONEY: {str(money)[:11].rjust(12)}    '
-        f'    SHARES: {str(shares)[:11].rjust(12)}    '
-        f'COMMISSION: {str(commissions)[:11].rjust(12)}'
+        f'    SHARES: {str(shares)[:11].rjust(12)}'
     )
 
 
@@ -28,30 +27,26 @@ def print_strategy(stock_data, ta_features, strategy, initial_money=100000, comm
     ta_features_numpy = ta_features.to_numpy()
     money = initial_money
     shares = 0
-    commissions = 0
     buy_strategy, sell_strategy = np.array_split(strategy, 2)
     for i in range(1, days - 1):
         eval_buy = np.sum(ta_features_numpy[i - 1] * buy_strategy)
         eval_sell = np.sum(ta_features_numpy[i - 1] * sell_strategy)
         if money > 0 and eval_buy > 0:
-            commissions += commission * money
-            shares = money / open_prices[i]
+            shares = (money * (1 - commission)) / open_prices[i]
             money = 0
-            print_operation(dates[i], Action.BUY, open_prices[i], money, shares, commissions)
+            print_operation(dates[i], Action.BUY, open_prices[i], money, shares)
         elif shares > 0 and eval_sell > 0:
-            money = shares * open_prices[i]
-            commissions += commission * money
+            money = shares * open_prices[i] * (1 - commission)
             shares = 0
-            print_operation(dates[i], Action.SELL, open_prices[i], money, shares, commissions)
+            print_operation(dates[i], Action.SELL, open_prices[i], money, shares)
     if shares > 0:
-        money = shares * open_prices[-1]
-        commissions += commission * money
+        money = shares * open_prices[-1] * (1 - commission)
         shares = 0
-        print_operation(dates[-1], Action.SELL, open_prices[-1], money, shares, commissions)
+        print_operation(dates[-1], Action.SELL, open_prices[-1], money, shares)
     print(
         f'\n{"-" * 115}\n'
         f'  INITIAL MONEY: {str(initial_money)[:11].rjust(12)}    '
-        f'    FINAL MONEY: {str(money - commissions)[:11].rjust(12)}'
+        f'    FINAL MONEY: {str(money)[:11].rjust(12)}'
     )
 
 
@@ -67,30 +62,26 @@ def simulate_strategy(stock_data, ta_features, strategy, initial_money=100000, c
     sum_money_and_money_in_shares = [initial_money]
     money = initial_money
     shares = 0
-    commissions = 0
     buy_strategy, sell_strategy = np.array_split(strategy, 2)
     for i in range(1, days - 1):
         eval_buy = np.sum(ta_features_numpy[i - 1] * buy_strategy)
         eval_sell = np.sum(ta_features_numpy[i - 1] * sell_strategy)
         if money > 0 and eval_buy > 0:
-            commissions += commission * money
-            shares = money / open_prices[i]
+            shares = (money * (1 - commission)) / open_prices[i]
             money = 0
             x_buy.append(dates[i])
             y_buy.append(open_prices[i])
         elif shares > 0 and eval_sell > 0:
-            money = shares * open_prices[i]
-            commissions += commission * money
+            money = shares * open_prices[i] * (1 - commission)
             shares = 0
             x_sell.append(dates[i])
             y_sell.append(open_prices[i])
-        sum_money_and_money_in_shares.append(money + shares * open_prices[i] - commissions)
+        sum_money_and_money_in_shares.append(money + shares * open_prices[i])
     if shares > 0:
-        money = shares * open_prices[-1]
-        commissions += commission * money
+        money = shares * open_prices[-1] * (1 - commission)
         x_sell.append(dates[-1])
         y_sell.append(open_prices[-1])
-    sum_money_and_money_in_shares.append(money - commissions)
+    sum_money_and_money_in_shares.append(money)
     return dates, open_prices, x_buy, y_buy, x_sell, y_sell, sum_money_and_money_in_shares
 
 
