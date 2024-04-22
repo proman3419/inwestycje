@@ -18,6 +18,7 @@ def preprocess_data(path: str) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
     stock_data = stock_data.tail(-400)
     preview = preview.tail(-400)
     drop_highly_correlated(ta_features)
+    ta_features = normalize(ta_features)
     preview = pd.concat([stock_data, ta_features], axis=1)
     return stock_data, ta_features, preview
 
@@ -47,6 +48,12 @@ def generate_features(module):
     features = retrieve_features(instances)
     return features
 
+
+def normalize(df):
+    columns = list(df.columns)
+    scaler = MinMaxScaler()
+    df[columns] = scaler.fit_transform(df[columns])
+    return df
 
 def append_features(features, ta_features):
     series = []
