@@ -35,7 +35,7 @@ def load_data(path: str) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
     df[columns] = scaler.fit_transform(df[columns])
     stock_data = df.iloc[:, :6]
     ta_features = df.iloc[:, 6:]
-    preview = pd.concat([stock_data, ta_features],axis=1)
+    preview = pd.concat([stock_data, ta_features], axis=1)
     return stock_data, ta_features, preview
 
 
