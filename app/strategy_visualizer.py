@@ -1,5 +1,7 @@
 import numpy as np
 from enum import Enum
+
+import pandas as pd
 from matplotlib import pyplot as plt
 
 
@@ -19,16 +21,21 @@ def print_operation(date, action: Action, close, money, shares):
 
 
 def print_strategy(stock_data, ta_features, strategy, initial_money=1000):
+    days = stock_data.shape[0]
     dates = stock_data['date'].to_numpy()
     close_prices = stock_data['close'].to_numpy()
+    ta_features_numpy = ta_features.to_numpy()
     money = initial_money
     shares = 0
-    for i in range(len(ta_features) - 1):
-        if np.sum(ta_features.iloc[i].to_numpy() * np.array(strategy)) > 0 and money > 0:
+    buy_strategy, sell_strategy = np.array_split(strategy, 2)
+    for i in range(days - 1):
+        eval_buy = np.sum(ta_features_numpy[i] * buy_strategy)
+        eval_sell = np.sum(ta_features_numpy[i] * sell_strategy)
+        if money > 0 and eval_buy > 0 and eval_sell <= 0:
             shares = money / close_prices[i]
             money = 0
             print_operation(dates[i], Action.BUY, close_prices[i], money, shares)
-        elif np.sum(ta_features.iloc[i].to_numpy() * np.array(strategy)) < 0 and shares > 0:
+        elif shares > 0 and eval_sell > 0 and eval_buy <= 0:
             money = shares * close_prices[i]
             shares = 0
             print_operation(dates[i], Action.SELL, close_prices[i], money, shares)
@@ -44,8 +51,10 @@ def print_strategy(stock_data, ta_features, strategy, initial_money=1000):
 
 
 def simulate_strategy(stock_data, ta_features, strategy, initial_money=1000):
+    days = stock_data.shape[0]
     dates = stock_data['date'].to_numpy()
     close_prices = stock_data['close'].to_numpy()
+    ta_features_numpy = ta_features.to_numpy()
     x_buy = []
     y_buy = []
     x_sell = []
@@ -53,13 +62,16 @@ def simulate_strategy(stock_data, ta_features, strategy, initial_money=1000):
     sum_money_and_money_in_shares = []
     money = initial_money
     shares = 0
-    for i in range(len(ta_features) - 1):
-        if np.sum(ta_features.iloc[i].to_numpy() * np.array(strategy)) > 0 and money > 0:
+    buy_strategy, sell_strategy = np.array_split(strategy, 2)
+    for i in range(days - 1):
+        eval_buy = np.sum(ta_features_numpy[i] * buy_strategy)
+        eval_sell = np.sum(ta_features_numpy[i] * sell_strategy)
+        if money > 0 and eval_buy > 0 and eval_sell <= 0:
             shares = money / close_prices[i]
             money = 0
             x_buy.append(dates[i])
             y_buy.append(close_prices[i])
-        elif np.sum(ta_features.iloc[i].to_numpy() * np.array(strategy)) < 0 and shares > 0:
+        elif shares > 0 and eval_sell > 0 and eval_buy <= 0:
             money = shares * close_prices[i]
             shares = 0
             x_sell.append(dates[i])
@@ -74,6 +86,7 @@ def simulate_strategy(stock_data, ta_features, strategy, initial_money=1000):
 
 
 def simulate_best_possible_strategy(stock_data, initial_money=1000):
+    days = stock_data.shape[0]
     dates = stock_data['date'].to_numpy()
     close_prices = stock_data['close'].to_numpy()
     x_buy = []
@@ -83,13 +96,13 @@ def simulate_best_possible_strategy(stock_data, initial_money=1000):
     sum_money_and_money_in_shares = []
     money = initial_money
     shares = 0
-    for i in range(len(dates) - 1):
-        if stock_data.iloc[i]['close'] < stock_data.iloc[i + 1]['close'] and money > 0:
+    for i in range(days - 1):
+        if close_prices[i] < close_prices[i + 1] and money > 0:
             shares = money / close_prices[i]
             money = 0
             x_buy.append(dates[i])
             y_buy.append(close_prices[i])
-        elif stock_data.iloc[i]['close'] > stock_data.iloc[i + 1]['close'] and shares > 0:
+        elif close_prices[i] > close_prices[i + 1] and shares > 0:
             money = shares * close_prices[i]
             shares = 0
             x_sell.append(dates[i])
