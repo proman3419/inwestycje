@@ -32,6 +32,51 @@ def cxTwoPointTwoVectorsNumpy(ind1: np.ndarray, ind2: np.ndarray):
     return ind1, ind2
 
 
+def eaGenerateUpdateRestarts(toolbox, nrestarts, maxngens, halloffame, stats, verbose=__debug__):
+    logbooks = []
+    best_logbook = None
+    best_fitness = 0
+
+    for i in range(nrestarts):
+        strategy = toolbox.generate_strategy()
+        toolbox.register("generate", strategy.generate, creator.Individual)
+        toolbox.register("update", strategy.update)
+
+        logbook = tools.Logbook()
+        logbooks.append(logbook)
+        logbook.header = ['restart', 'gen', 'nevals', 'sigma'] + stats.fields
+
+        stds = []
+
+        for gen in range(maxngens):
+            # Generate a new population
+            population = toolbox.generate()
+            # Evaluate the individuals
+            fitnesses = toolbox.map(toolbox.evaluate, population)
+            for ind, fit in zip(population, fitnesses):
+                ind.fitness.values = fit
+
+            halloffame.update(population)
+
+            # Update the strategy with the evaluated individuals
+            toolbox.update(population)
+
+            record = stats.compile(population)
+            logbook.record(gen=gen, nevals=len(population), restart=i, sigma=strategy.sigma, **record)
+            if verbose:
+                print(logbook.stream)
+
+            stds.append(np.std(fitnesses))
+            if len(stds) > 20 and np.mean(stds[-20:]) < 1e-1:
+                break
+
+        if halloffame[0].fitness.values[0] > best_fitness:
+            best_fitness = halloffame[0].fitness.values[0]
+            best_logbook = logbook
+
+    return best_logbook, logbooks
+
+
 def mutUniform(individual, low, up, indpb):
     size = len(individual)
 
@@ -158,8 +203,6 @@ def setup_cmaes(
     stats = setup_stats()
     hall_of_fame = tools.HallOfFame(1, compare_individuals)
 
-    strategy = cma.Strategy(centroid=np.zeros(N), sigma=100, lambda_=lambda_)
-    toolbox.register("generate", strategy.generate, creator.Individual)
-    toolbox.register("update", strategy.update)
+    toolbox.register("generate_strategy", cma.Strategy, centroid=np.random.uniform(-5, 5, N), sigma=1, lambda_=lambda_)
 
     return toolbox, stats, hall_of_fame
