@@ -4,7 +4,7 @@ import numpy as np
 import multiprocessing
 
 from math import log2
-from deap import creator, base, tools
+from deap import creator, base, tools, cma
 
 
 def cxTwoPointTwoVectorsNumpy(ind1: np.ndarray, ind2: np.ndarray):
@@ -68,16 +68,13 @@ def evaluate(
     return money,
 
 
-def setup_ea_toolbox(
+def setup_toolbox(
         stock_data: pd.DataFrame,
         ta_features: pd.DataFrame,
-        pop_size: int,
-        tournament_size_pop_ratio: float,
         initial_money: int,
         commission: float
 ) -> base.Toolbox:
-    ta_features_n = len(ta_features.columns)
-    individual_n = ta_features_n * 2
+    N = len(ta_features.columns) * 2
 
     creator.create("FitnessMax", base.Fitness, weights=(1.0,))
     creator.create("Individual", np.ndarray, fitness=creator.FitnessMax)
@@ -85,7 +82,7 @@ def setup_ea_toolbox(
     toolbox = base.Toolbox()
 
     toolbox.register("attr_uniform", random.uniform, -1, 1)
-    toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_uniform, n=individual_n)
+    toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_uniform, n=N)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
     days = ta_features.shape[0]
@@ -103,13 +100,9 @@ def setup_ea_toolbox(
         initial_money=initial_money,
         commission=commission
     )
-    toolbox.register("mate", cxTwoPointTwoVectorsNumpy)
-    toolbox.register("mutate", tools.mutPolynomialBounded, eta=10, low=-1, up=1, indpb=0.05)
-    # toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.5, indpb=0.1)
-    # toolbox.register("mutate", mutUniform, low=-1, up=1, indpb=0.1)
 
-    tournament_size = 2 ** int(log2(pop_size * tournament_size_pop_ratio))
-    toolbox.register("select", tools.selTournament, tournsize=tournament_size)
+    pool = multiprocessing.Pool()
+    toolbox.register("map", pool.map)
 
     return toolbox
 
@@ -136,13 +129,18 @@ def setup_ea(
         initial_money: int,
         commission: float
 ):
-    toolbox = setup_ea_toolbox(stock_data, ta_features, pop_size, tournament_size_pop_ratio, initial_money, commission)
+    toolbox = setup_toolbox(stock_data, ta_features, initial_money, commission)
+
+    toolbox.register("mate", cxTwoPointTwoVectorsNumpy)
+    toolbox.register("mutate", tools.mutPolynomialBounded, eta=10, low=-1, up=1, indpb=0.05)
+    # toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.5, indpb=0.1)
+    # toolbox.register("mutate", mutUniform, low=-1, up=1, indpb=0.1)
+    tournament_size = 2 ** int(log2(pop_size * tournament_size_pop_ratio))
+    toolbox.register("select", tools.selTournament, tournsize=tournament_size)
+
     population = toolbox.population(n=pop_size)
     stats = setup_stats()
     hall_of_fame = tools.HallOfFame(1, compare_individuals)
-
-    pool = multiprocessing.Pool()
-    toolbox.register("map", pool.map)
 
     return population, toolbox, stats, hall_of_fame
 
@@ -150,16 +148,18 @@ def setup_ea(
 def setup_cmaes(
         stock_data: pd.DataFrame,
         ta_features: pd.DataFrame,
-        pop_size: int,
+        lambda_: int,
         initial_money: int,
         commission: float
 ):
-    toolbox = setup_ea_toolbox(stock_data, ta_features, pop_size, 0.1, initial_money, commission)
-    population = toolbox.population(n=pop_size)
+    N = len(ta_features.columns) * 2
+
+    toolbox = setup_toolbox(stock_data, ta_features, initial_money, commission)
     stats = setup_stats()
     hall_of_fame = tools.HallOfFame(1, compare_individuals)
 
-    pool = multiprocessing.Pool()
-    toolbox.register("map", pool.map)
+    strategy = cma.Strategy(centroid=np.zeros(N), sigma=0.4, lambda_=lambda_)
+    toolbox.register("generate", strategy.generate, creator.Individual)
+    toolbox.register("update", strategy.update)
 
-    return population, toolbox, stats, hall_of_fame
+    return toolbox, stats, hall_of_fame
