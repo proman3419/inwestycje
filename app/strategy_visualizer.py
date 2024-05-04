@@ -141,3 +141,33 @@ def plot_strategy(dates, open_prices, x_buy, y_buy, x_sell, y_sell, sum_money_an
     plt.xticks(np.arange(0, dates_cnt - 1, dates_cnt // 20), rotation=45)
 
     plt.show()
+
+
+def plot_fitness_over_generations(logbook):
+    def extract_from_logbook(key):
+        nonlocal logbook
+        return [x[key] for x in logbook]
+
+    gens = extract_from_logbook('gen')
+    avgs = extract_from_logbook('avg')
+    stds = extract_from_logbook('std')
+    mins = extract_from_logbook('min')
+    maxs = extract_from_logbook('max')
+
+    plt.style.use('bmh')
+    plt.figure(figsize=(16, 9), dpi=400)
+    plt.plot(gens, avgs, 'y-', label=f'avg', linewidth=0.75)
+    plt.plot(gens, stds, 'b-', label=f'std', linewidth=0.75)
+    plt.plot(gens, mins, 'r-', label=f'min', linewidth=0.75)
+    plt.plot(gens, maxs, 'g-', label=f'max', linewidth=0.75)
+    plt.xlabel('Generation')
+    plt.ylabel('Fitness value')
+    plt.title('Fitness over generations')
+    plt.grid(True)
+    max_gens = max(gens)
+    plt.xticks(np.arange(0, max_gens, max_gens // 10))
+    plt.xlim([0, max_gens])
+    plt.ylim([0, max(maxs)])
+    plt.legend(loc='upper left')
+
+    plt.show()
