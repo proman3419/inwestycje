@@ -167,7 +167,7 @@ def plot_fitness_over_generations(logbook):
     max_gens = max(gens)
     plt.xticks(np.arange(0, max_gens, max_gens // 10))
     plt.xlim([0, max_gens])
-    plt.ylim([0, max(maxs)])
+    plt.ylim([0, max(maxs) * 1.05])
     plt.legend(loc='upper left')
 
     plt.show()
