@@ -158,7 +158,7 @@ def setup_cmaes(
     stats = setup_stats()
     hall_of_fame = tools.HallOfFame(1, compare_individuals)
 
-    strategy = cma.Strategy(centroid=np.zeros(N), sigma=0.4, lambda_=lambda_)
+    strategy = cma.Strategy(centroid=np.zeros(N), sigma=100, lambda_=lambda_)
     toolbox.register("generate", strategy.generate, creator.Individual)
     toolbox.register("update", strategy.update)
 
