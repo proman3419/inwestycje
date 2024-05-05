@@ -5,6 +5,9 @@ import multiprocessing
 
 from math import log2
 from deap import creator, base, tools, cma
+from time import time
+
+from storage_utils import init_dump_dir, save_features, save_logbook, add_summary
 
 
 def cxTwoPointTwoVectorsNumpy(ind1: np.ndarray, ind2: np.ndarray):
@@ -32,23 +35,21 @@ def cxTwoPointTwoVectorsNumpy(ind1: np.ndarray, ind2: np.ndarray):
     return ind1, ind2
 
 
-def eaGenerateUpdateRestarts(toolbox, nrestarts, maxngens, halloffame, stats, verbose=__debug__):
-    logbooks = []
-    best_logbook = None
-    best_fitness = 0
-
+def eaGenerateUpdateWithRestartsAndFileDump(toolbox, nrestarts, maxngens, halloffame, stats, verbose=__debug__):
     for i in range(nrestarts):
         strategy = toolbox.generate_strategy()
         toolbox.register("generate", strategy.generate, creator.Individual)
         toolbox.register("update", strategy.update)
 
         logbook = tools.Logbook()
-        logbooks.append(logbook)
         logbook.header = ['restart', 'gen', 'nevals', 'sigma'] + stats.fields
 
         stds = []
+        gen = 0
+        halloffame.clear()
+        start_time = time()
 
-        for gen in range(maxngens):
+        while gen < maxngens:
             # Generate a new population
             population = toolbox.generate()
             # Evaluate the individuals
@@ -66,15 +67,30 @@ def eaGenerateUpdateRestarts(toolbox, nrestarts, maxngens, halloffame, stats, ve
             if verbose:
                 print(logbook.stream)
 
+            # Stop condition
             stds.append(np.std(fitnesses))
             if len(stds) > 20 and np.mean(stds[-20:]) < 1e-1:
                 break
 
-        if halloffame[0].fitness.values[0] > best_fitness:
-            best_fitness = halloffame[0].fitness.values[0]
-            best_logbook = logbook
+            # Increment generation number
+            gen += 1
 
-    return best_logbook, logbooks
+        dir_path = init_dump_dir('cmaes')
+
+        strategy = halloffame[0]
+        buy_strategy, sell_strategy = np.array_split(strategy, 2)
+        pd.DataFrame(
+            zip(toolbox.get_ta_features().columns, buy_strategy, sell_strategy),
+            columns=["feature", "buy strategy weight", "sell strategy weight"],
+        )
+        save_features(dir_path, strategy)
+        save_logbook(dir_path, logbook)
+        add_summary({
+            'path': dir_path,
+            'result': halloffame[0].fitness.values[0],
+            'n_generations': gen,
+            'execution_time': time() - start_time
+        })
 
 
 def mutUniform(individual, low, up, indpb):
@@ -148,6 +164,7 @@ def setup_toolbox(
 
     pool = multiprocessing.Pool()
     toolbox.register("map", pool.map)
+    toolbox.register("get_ta_features", lambda: ta_features)
 
     return toolbox
 
@@ -203,6 +220,6 @@ def setup_cmaes(
     stats = setup_stats()
     hall_of_fame = tools.HallOfFame(1, compare_individuals)
 
-    toolbox.register("generate_strategy", cma.Strategy, centroid=np.random.uniform(-5, 5, N), sigma=1, lambda_=lambda_)
+    toolbox.register("generate_strategy", cma.Strategy, centroid=np.zeros(N), sigma=1, lambda_=lambda_)
 
     return toolbox, stats, hall_of_fame

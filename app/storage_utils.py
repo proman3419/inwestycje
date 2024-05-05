@@ -11,7 +11,7 @@ STORAGE_DIR_PATH = './storage/'
 def init_dump_dir(dirname_base):
     time_str = time.strftime("%Y-%m-%d_%H-%M-%S")
     dir_path = os.path.join(STORAGE_DIR_PATH, f'{dirname_base}_{time_str}')
-    os.mkdir(dir_path)
+    os.makedirs(dir_path)
     return dir_path
 
 
@@ -22,7 +22,6 @@ def print_file(file_path):
 
 def save_features(dir_path, features_df):
     file_path = os.path.join(dir_path, 'features.csv')
-    print(features_df)
     features_df.to_csv(file_path)
     return file_path
 
@@ -45,8 +44,13 @@ def load_logbook(dir_path):
     file_path = os.path.join(dir_path, 'logbook.csv')
     df = pd.read_csv(file_path)
     output_list = df.to_dict(orient='records')
-    output_list = [{key: value for key, value in d.items() if key in ['gen', 'nevals', 'avg', 'std', 'min', 'max']} for d in output_list]
     return output_list
+
+
+def load_logbook_df(dir_path):
+    file_path = os.path.join(dir_path, 'logbook.csv')
+    logbook_df = pd.read_csv(file_path, index_col=False)
+    return logbook_df
 
 
 def load_strategy(dir_path):
@@ -54,3 +58,20 @@ def load_strategy(dir_path):
     features_df = pd.read_csv(file_path)
     return np.concatenate([features_df['buy strategy weight'].values.reshape(-1, 1),
                            features_df['sell strategy weight'].values.reshape(-1, 1)], axis=0).flatten()
+
+
+def add_summary(d):
+    file_path = os.path.join(STORAGE_DIR_PATH, 'summary.csv')
+    write_header = not os.path.isfile(file_path)
+    with open(file_path, 'a+', newline='') as f:
+        w = csv.DictWriter(f, fieldnames=d.keys())
+        if write_header:
+            w.writeheader()
+        w.writerow(d)
+    return file_path
+
+
+def load_summary():
+    file_path = os.path.join(STORAGE_DIR_PATH, 'summary.csv')
+    summary_df = pd.read_csv(file_path)
+    return summary_df
