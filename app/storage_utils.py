@@ -71,7 +71,9 @@ def add_summary(d):
     return file_path
 
 
-def load_summary():
+def load_summary(dirname_base):
     file_path = os.path.join(STORAGE_DIR_PATH, 'summary.csv')
     summary_df = pd.read_csv(file_path)
+    summary_df = summary_df[summary_df.apply(lambda x: os.path.basename(x['path']).startswith(dirname_base + '_'), axis=1)]
+    summary_df.sort_values(by='result', inplace=True, ascending=False)
     return summary_df
