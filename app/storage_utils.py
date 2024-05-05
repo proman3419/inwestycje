@@ -20,7 +20,7 @@ def print_file(file_path):
         print(f.read())
 
 
-def save_features(dir_path, features_df):
+def save_strategy(dir_path, features_df):
     file_path = os.path.join(dir_path, 'features.csv')
     features_df.to_csv(file_path)
     return file_path
@@ -40,6 +40,7 @@ def save_logbook(dir_path, logbook):
     return file_path
 
 
+# required format for further processing
 def load_logbook(dir_path):
     file_path = os.path.join(dir_path, 'logbook.csv')
     df = pd.read_csv(file_path)
@@ -53,11 +54,17 @@ def load_logbook_df(dir_path):
     return logbook_df
 
 
+# required format for further processing
 def load_strategy(dir_path):
-    file_path = os.path.join(dir_path, 'features.csv')
-    features_df = pd.read_csv(file_path)
+    features_df = load_strategy_df(dir_path)
     return np.concatenate([features_df['buy strategy weight'].values.reshape(-1, 1),
                            features_df['sell strategy weight'].values.reshape(-1, 1)], axis=0).flatten()
+
+
+def load_strategy_df(dir_path):
+    file_path = os.path.join(dir_path, 'features.csv')
+    features_df = pd.read_csv(file_path, index_col=0)
+    return features_df
 
 
 def add_summary(d):
