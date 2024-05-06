@@ -28,8 +28,14 @@ Przygotowaliśmy wykres, który dla każdej generacji wyświetla jej statystyki:
 
 ### Wyniki
 
+### Podsumowanie dla EA
 ![](ea_summary.png)
+### Fitness i najlepsza strategia znaleziona przez EA
 ![](ea_fitness.png)
 ![](ea_strategy.png)
+
+### Podsumowanie dla CMA-ES
+![](cmaes_summary.png)
+### Fitness i najlepsza strategia znaleziona przez CMA-ES
 ![](cmaes_fitness.png)
 ![](cmaes_strategy.png)
