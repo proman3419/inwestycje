@@ -28,3 +28,8 @@ Przygotowaliśmy wykres, który dla każdej generacji wyświetla jej statystyki:
 
 ### Wyniki
 
+![](ea_summary.png)
+![](ea_fitness.png)
+![](ea_strategy.png)
+![](cmaes_fitness.png)
+![](cmaes_strategy.png)
