@@ -7,7 +7,9 @@ from math import log2
 from deap import creator, base, tools, cma
 from time import time
 
-from storage_utils import init_dump_dir, save_features, save_logbook, add_summary
+from deap.algorithms import varAnd
+
+from storage_utils import init_dump_dir, save_strategy, save_logbook, add_summary
 
 
 def cxTwoPointTwoVectorsNumpy(ind1: np.ndarray, ind2: np.ndarray):
@@ -35,7 +37,27 @@ def cxTwoPointTwoVectorsNumpy(ind1: np.ndarray, ind2: np.ndarray):
     return ind1, ind2
 
 
-def eaGenerateUpdateWithRestartsAndFileDump(toolbox, nrestarts, maxngens, halloffame, stats, verbose=__debug__):
+def dump_results(dirname_base, toolbox, halloffame, logbook, generations, start_time, save_simulation_params):
+    strategy = halloffame[0]
+    buy_strategy, sell_strategy = np.array_split(strategy, 2)
+    strategy_df = pd.DataFrame(
+        zip(toolbox.get_features_columns(), buy_strategy, sell_strategy),
+        columns=["feature", "buy strategy weight", "sell strategy weight"],
+    )
+
+    dir_path = init_dump_dir(dirname_base)
+    save_strategy(dir_path, strategy_df)
+    save_logbook(dir_path, logbook)
+    add_summary(dirname_base, {
+        'path': dir_path,
+        **save_simulation_params,
+        'result': halloffame[0].fitness.values[0],
+        'n_generations': generations,
+        'execution_time': time() - start_time
+    })
+
+
+def eaGenerateUpdateWithRestartsAndFileDump(toolbox, nrestarts, maxngens, halloffame, stats, p, verbose=__debug__):
     for i in range(nrestarts):
         strategy = toolbox.generate_strategy()
         toolbox.register("generate", strategy.generate, creator.Individual)
@@ -44,8 +66,8 @@ def eaGenerateUpdateWithRestartsAndFileDump(toolbox, nrestarts, maxngens, hallof
         logbook = tools.Logbook()
         logbook.header = ['restart', 'gen', 'nevals', 'sigma'] + stats.fields
 
-        stds = []
         gen = 0
+        stds = []
         halloffame.clear()
         start_time = time()
 
@@ -69,28 +91,75 @@ def eaGenerateUpdateWithRestartsAndFileDump(toolbox, nrestarts, maxngens, hallof
 
             # Stop condition
             stds.append(np.std(fitnesses))
-            if len(stds) > 20 and np.mean(stds[-20:]) < 1e-1:
+            if len(stds) > 3 and np.mean(stds[-3:]) < 1e-1:
                 break
 
             # Increment generation number
             gen += 1
 
-        dir_path = init_dump_dir('cmaes')
+        dump_results('cmaes', toolbox, halloffame, logbook, gen, start_time, p)
 
-        strategy = halloffame[0]
-        buy_strategy, sell_strategy = np.array_split(strategy, 2)
-        pd.DataFrame(
-            zip(toolbox.get_ta_features().columns, buy_strategy, sell_strategy),
-            columns=["feature", "buy strategy weight", "sell strategy weight"],
-        )
-        save_features(dir_path, strategy)
-        save_logbook(dir_path, logbook)
-        add_summary({
-            'path': dir_path,
-            'result': halloffame[0].fitness.values[0],
-            'n_generations': gen,
-            'execution_time': time() - start_time
-        })
+
+def eaSimpleWithRestartsAndFileDump(toolbox, cxpb, mutpb, nrestarts, maxngens, stats, halloffame, p, verbose=__debug__):
+    for i in range(nrestarts):
+        population = toolbox.generate_population()
+
+        logbook = tools.Logbook()
+        logbook.header = ['restart', 'gen', 'nevals'] + stats.fields
+
+        # Evaluate the individuals with an invalid fitness
+        invalid_ind = [ind for ind in population if not ind.fitness.valid]
+        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+        for ind, fit in zip(invalid_ind, fitnesses):
+            ind.fitness.values = fit
+
+        halloffame.update(population)
+
+        record = stats.compile(population)
+        logbook.record(gen=0, nevals=len(invalid_ind), restart=i, **record)
+        if verbose:
+            print(logbook.stream)
+
+        gen = 1
+        maxs = []
+        halloffame.clear()
+        start_time = time()
+
+        # Begin the generational process
+        while gen < maxngens:
+            # Select the next generation individuals
+            offspring = toolbox.select(population, len(population))
+
+            # Vary the pool of individuals
+            offspring = varAnd(offspring, toolbox, cxpb, mutpb)
+
+            # Evaluate the individuals with an invalid fitness
+            invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+            fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+            for ind, fit in zip(invalid_ind, fitnesses):
+                ind.fitness.values = fit
+
+            # Update the hall of fame with the generated individuals
+            halloffame.update(offspring)
+
+            # Replace the current population by the offspring
+            population[:] = offspring
+
+            # Append the current generation statistics to the logbook
+            record = stats.compile(population)
+            logbook.record(gen=gen, nevals=len(invalid_ind), restart=i, **record)
+            if verbose:
+                print(logbook.stream)
+
+            # Stop condition
+            maxs.append(np.max(fitnesses))
+            if len(maxs) > 1000 and np.min(maxs[-1000:]) == np.max(maxs[-1000:]):
+                break
+
+            # Increment generation number
+            gen += 1
+
+        dump_results('ea', toolbox, halloffame, logbook, gen, start_time, p)
 
 
 def mutUniform(individual, low, up, indpb):
@@ -134,7 +203,7 @@ def setup_toolbox(
         ta_features: pd.DataFrame,
         initial_money: int,
         commission: float
-) -> base.Toolbox:
+):
     N = len(ta_features.columns) * 2
 
     creator.create("FitnessMax", base.Fitness, weights=(1.0,))
@@ -145,6 +214,7 @@ def setup_toolbox(
     toolbox.register("attr_uniform", random.uniform, -1, 1)
     toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_uniform, n=N)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+    toolbox.register("get_features_columns", lambda x: x, ta_features.columns)
 
     days = ta_features.shape[0]
     ta_features = ta_features.to_numpy()
@@ -164,12 +234,11 @@ def setup_toolbox(
 
     pool = multiprocessing.Pool()
     toolbox.register("map", pool.map)
-    toolbox.register("get_ta_features", lambda: ta_features)
 
     return toolbox
 
 
-def setup_stats() -> tools.Statistics:
+def setup_stats():
     stats = tools.Statistics(key=lambda ind: ind.fitness.values)
     stats.register("avg", np.mean, axis=0)
     stats.register("std", np.std, axis=0)
@@ -200,11 +269,12 @@ def setup_ea(
     tournament_size = 2 ** int(log2(pop_size * tournament_size_pop_ratio))
     toolbox.register("select", tools.selTournament, tournsize=tournament_size)
 
-    population = toolbox.population(n=pop_size)
     stats = setup_stats()
     hall_of_fame = tools.HallOfFame(1, compare_individuals)
 
-    return population, toolbox, stats, hall_of_fame
+    toolbox.register("generate_population", toolbox.population, n=pop_size)
+
+    return toolbox, stats, hall_of_fame
 
 
 def setup_cmaes(
@@ -220,6 +290,6 @@ def setup_cmaes(
     stats = setup_stats()
     hall_of_fame = tools.HallOfFame(1, compare_individuals)
 
-    toolbox.register("generate_strategy", cma.Strategy, centroid=np.zeros(N), sigma=1, lambda_=lambda_)
+    toolbox.register("generate_strategy", cma.Strategy, centroid=np.zeros(N), sigma=100, lambda_=lambda_)
 
     return toolbox, stats, hall_of_fame
