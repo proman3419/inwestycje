@@ -1,6 +1,7 @@
 from preprocessing import preprocess_data
 from setup import setup_cmaes, eaGenerateUpdateWithRestartsAndFileDump
 import argparse
+from storage_utils import set_storage_dir_path
 
 
 def init_args():
@@ -25,11 +26,14 @@ COMMISSION = 0
     arg_parser.add_argument('--MAX_N_GENERATIONS', type=int, default=10000)
     arg_parser.add_argument('--INITIAL_MONEY', type=int, default=1000)
     arg_parser.add_argument('--COMMISSION', type=float, default=0)
+    arg_parser.add_argument('--STORAGE_DIRNAME_BASE', type=str, default='')
 
     return arg_parser.parse_args()
 
 
 args = init_args()
+
+set_storage_dir_path(args.STORAGE_DIRNAME_BASE)
 
 stock_data, ta_features, _ = preprocess_data("./wig_d.csv")
 
