@@ -281,6 +281,7 @@ def setup_cmaes(
         stock_data: pd.DataFrame,
         ta_features: pd.DataFrame,
         lambda_: int,
+        sigma: int,
         initial_money: int,
         commission: float
 ):
@@ -290,6 +291,6 @@ def setup_cmaes(
     stats = setup_stats()
     hall_of_fame = tools.HallOfFame(1, compare_individuals)
 
-    toolbox.register("generate_strategy", cma.Strategy, centroid=np.zeros(N), sigma=100, lambda_=lambda_)
+    toolbox.register("generate_strategy", cma.Strategy, centroid=np.zeros(N), sigma=sigma, lambda_=lambda_)
 
     return toolbox, stats, hall_of_fame

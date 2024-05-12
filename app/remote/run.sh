@@ -11,4 +11,4 @@
 module load python/3.9.6
 module load poetry/1.5.1-gcccore-12.3.0
 srun poetry install
-srun python run_cmaes.py
+srun poetry run python run_cmaes.py
