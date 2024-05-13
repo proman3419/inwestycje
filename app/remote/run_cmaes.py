@@ -27,6 +27,7 @@ COMMISSION = 0
     arg_parser.add_argument('--INITIAL_MONEY', type=int, default=1000)
     arg_parser.add_argument('--COMMISSION', type=float, default=0)
     arg_parser.add_argument('--STORAGE_DIRNAME_BASE', type=str, default='')
+    arg_parser.add_argument('--DATASET', type=str, default='data/wig_d.csv')
 
     return arg_parser.parse_args()
 
@@ -35,7 +36,7 @@ args = init_args()
 
 set_storage_dir_path(args.STORAGE_DIRNAME_BASE)
 
-stock_data, ta_features, _ = preprocess_data("./wig_d.csv")
+stock_data, ta_features, _ = preprocess_data("data/pkn_d.csv")
 
 toolbox, stats, hall_of_fame = setup_cmaes(
     stock_data,

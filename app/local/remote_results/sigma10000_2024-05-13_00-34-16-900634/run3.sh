@@ -5,7 +5,6 @@
 #SBATCH --partition=plgrid
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=12
-#SBATCH --output="joblog_sigma10000.txt"
 #SBATCH --error="joberr_sigma10000.txt"
 
 module load python/3.9.6
