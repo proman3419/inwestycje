@@ -13,9 +13,13 @@ def get_now_timestamp():
 STORAGE_DIR_PATH = os.path.expandvars(f'$SCRATCH/storage/_{get_now_timestamp()}')
 
 
-def set_storage_dir_path(dirname_base):
+def set_storage_dir_path_exact(dir_path):
     global STORAGE_DIR_PATH
-    STORAGE_DIR_PATH = os.path.expandvars(f'$SCRATCH/storage/{dirname_base}_{get_now_timestamp()}')
+    STORAGE_DIR_PATH = dir_path
+
+
+def set_storage_dir_path(dirname_base):
+    set_storage_dir_path_exact(os.path.expandvars(f'$SCRATCH/storage/{dirname_base}_{get_now_timestamp()}'))
 
 
 def init_dump_dir(dirname_base):

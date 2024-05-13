@@ -6,11 +6,24 @@ import pandas as pd
 from datetime import datetime
 
 
-STORAGE_DIR_PATH = './storage/'
+def get_now_timestamp():
+    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
+
+
+STORAGE_DIR_PATH = os.path.expandvars(f'$SCRATCH/storage/_{get_now_timestamp()}')
+
+
+def set_storage_dir_path_exact(dir_path):
+    global STORAGE_DIR_PATH
+    STORAGE_DIR_PATH = dir_path
+
+
+def set_storage_dir_path(dirname_base):
+    set_storage_dir_path_exact(os.path.expandvars(f'$SCRATCH/storage/{dirname_base}_{get_now_timestamp()}'))
 
 
 def init_dump_dir(dirname_base):
-    time_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
+    time_str = get_now_timestamp()
     dir_path = os.path.join(STORAGE_DIR_PATH, f'{dirname_base}_{time_str}')
     os.makedirs(dir_path)
     return dir_path
