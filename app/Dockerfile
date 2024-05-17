@@ -7,5 +7,6 @@ RUN sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|
 #RUN yum update
 RUN yum install python39 -y
 RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH "/root/.local/bin:$PATH"
 
 CMD ["tail", "-f", "/dev/null"]

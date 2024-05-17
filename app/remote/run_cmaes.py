@@ -8,7 +8,7 @@ def init_args():
     arg_parser = argparse.ArgumentParser(
         description='''-- DEFAULTS --
 CMAES algorithm parameters:
-LAMBDA = args.LAMBDA
+LAMBDA = 150
 SIGMA = 1000
 
 # Simulation parameters:
@@ -16,6 +16,10 @@ N_RESTARTS = 1000
 MAX_N_GENERATIONS = 10000
 INITIAL_MONEY = 1000
 COMMISSION = 0
+
+# Additional parameters:
+STORAGE_DIRNAME_BASE = ""
+DATASET = "data/wig_d.csv"
 ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
@@ -33,10 +37,11 @@ COMMISSION = 0
 
 
 args = init_args()
+print(f'args: {args}')
 
 set_storage_dir_path(args.STORAGE_DIRNAME_BASE)
 
-stock_data, ta_features, _ = preprocess_data("data/pkn_d.csv")
+stock_data, ta_features, _ = preprocess_data(args.DATASET)
 
 toolbox, stats, hall_of_fame = setup_cmaes(
     stock_data,
