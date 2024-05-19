@@ -73,4 +73,4 @@ result: 17533.112948
 
 ### Wnioski
 - uzyskane strategie nie są uniwersalne
-- wyższe commission - mniejszy wynik
+- wyższe commission - mniejszy wynik, mniej transakcji
