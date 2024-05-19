@@ -6,3 +6,4 @@
 3. [Określenie celu i zakresu prac, uruchomienie narzędzi](etapy/3/README.md)
 4. [Urzeczywistnienie symulacji, analiza metryk](etapy/4/README.md)
 5. [CMA-ES, wykres zbieżności funkcji fitness, większe testy](etapy/5/README.md)
+6. [Wyniki projektu](etapy/6/README.md)
