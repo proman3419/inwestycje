@@ -32,7 +32,10 @@ wyniki:
 
 ## Dłuższe testy
 Uruchomiliśmy symulacje dla akcji PKN Orlen (02.01.2004 - 30.12.2013), startowy kapitał 1000. \
-Następnie wygenerowane strategie przetestowaliśmy na indeksie WIG (14.04.2011 - 12.06.2020).
+Następnie wygenerowane strategie przetestowaliśmy na indeksach 
+- PKN Orlen (02.01.2004 - 30.12.2013)
+- PKN Orlen (02.01.2014 - 08.08.2023)
+- WIG (14.04.2011 - 12.06.2020).
 
 parametry joba:
 | parametr      | wartość  |
@@ -51,6 +54,9 @@ result: 172146.737095
 #### PKN
 ![](commission_0_000perc_pkn.png)
 
+#### PKN UNKNOWN
+![](commission_0_000perc_pkn_unknown.png)
+
 #### WIG
 ![](commission_0_000perc_wig.png)
 
@@ -64,6 +70,9 @@ result: 128976.255299
 #### PKN
 ![](commission_0_001perc_pkn.png)
 
+#### PKN UNKNOWN
+![](commission_0_001perc_pkn_unknown.png)
+
 #### WIG
 ![](commission_0_001perc_wig.png)
 
@@ -76,6 +85,9 @@ result: 17533.112948
 
 #### PKN
 ![](commission_0_003perc_pkn.png)
+
+#### PKN UNKNOWN
+![](commission_0_003perc_pkn_unknown.png)
 
 #### WIG
 ![](commission_0_003perc_wig.png)
