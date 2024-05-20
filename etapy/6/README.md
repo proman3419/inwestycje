@@ -45,6 +45,9 @@ parametry joba:
 strategia: commission0_000perc_2024-05-18_17-33-12-213006/cmaes_2024-05-18_20-50-48-335702 \
 result: 172146.737095
 
+#### FITNESS OVER GENERATIONS
+![](commission_0_000perc_fitness.png)
+
 #### PKN
 ![](commission_0_000perc_pkn.png)
 
@@ -55,6 +58,9 @@ result: 172146.737095
 strategia: commission0_001perc_2024-05-19_07-57-03-469936/cmaes_2024-05-19_08-08-38-178270 \
 result: 128976.255299
 
+#### FITNESS OVER GENERATIONS
+![](commission_0_001perc_fitness.png)
+
 #### PKN
 ![](commission_0_001perc_pkn.png)
 
@@ -64,6 +70,9 @@ result: 128976.255299
 ### --COMMISSION=0.003
 strategia: commission0_003perc_2024-05-18_17-33-14-977267/cmaes_2024-05-19_02-09-48-244080 \
 result: 17533.112948
+
+#### FITNESS OVER GENERATIONS
+![](commission_0_003perc_fitness.png)
 
 #### PKN
 ![](commission_0_003perc_pkn.png)
